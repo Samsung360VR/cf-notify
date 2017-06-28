@@ -6,6 +6,8 @@ import slack
 import boto3
 import re
 from itertools import groupby
+from dateutil import parser as dateparser
+from datetime import datetime
 
 # Mapping CloudFormation status codes to colors for Slack message attachments
 # Status codes from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
@@ -62,7 +64,12 @@ STACK_PARAMETERS_FOR_SLACK = [
     'configRTMPIngestAddress',
     'microservice',
     'myUri',
+    'httpUri',
+    'purpose',
+    'mode',
 ]
+
+CF_ICON = 'https://s3-us-west-2.amazonaws.com/slack-files2/avatars/2017-06-27/203965887280_feea618f01251566a108_36.png'
 
 client = None
 
@@ -92,9 +99,10 @@ def get_stack_update_message(cf_message):
     resourse_status = cf_message['ResourceStatus']
     #if resourse_status in DESCRIBE_STACK_PARAMS:
     if not resourse_status.upper().endswith('_IN_PROGRESS'):
-        attachments.append(get_stack_params_attachment(cf_message['StackName']))
+        attachments.append(get_stack_params_attachment(cf_message))
     if resourse_status in DESCRIBE_STACK_STATUS:
-        attachments.append(get_stack_summary_attachment(cf_message['StackName']))
+        attachments.append(get_stack_summary_attachment(cf_message))
+    attachments.append(get_stack_footer_attachment(cf_message))
 
     stack_url = get_stack_url(cf_message['StackId'])
 
@@ -134,7 +142,8 @@ def get_stack_update_attachment(cf_message):
     }
 
 
-def get_stack_summary_attachment(stack_name):
+def get_stack_summary_attachment(cf_message):
+    stack_name = cf_message['StackName']
     resources = client.describe_stack_resources(StackName=stack_name)
     sorted_resources = sorted(resources['StackResources'], key=lambda res: res['ResourceType'])
     grouped_resources = groupby(sorted_resources, lambda res: res['ResourceType'])
@@ -149,7 +158,8 @@ def get_stack_summary_attachment(stack_name):
     }
 
 
-def get_stack_params_attachment(stack_name):
+def get_stack_params_attachment(cf_message):
+    stack_name = cf_message['StackName']
     stack_descr = client.describe_stacks(StackName=stack_name).get('Stacks', {})[0]
 
     params = {e['OutputKey']: e['OutputValue'] for e in stack_descr.get('Outputs', [])}
@@ -171,14 +181,25 @@ def get_stack_params_attachment(stack_name):
         params['aBlueOrGreen'] += ' ' + {
             'blue': ':large_blue_circle:',
             'green': ':green_apple:',
-        }.get(params['aBlueOrGreen'].lower(),':alien:')
-
-    title = 'Some parameters:'
+        }.get(params['aBlueOrGreen'].lower(), ':alien:')
 
     return {
-        'title': title,
-        'fields': [{'title': k, 'value': v, 'short': False}
-                   for k, v in params.iteritems() if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)]
+        'pretext': '_Momentous:_',
+        'text': '\n'.join(
+            ['*{key}*: {value}'.format(key=k, value=v) for k, v in params.iteritems()
+             if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)]),
+        'mrkdwn_in': ['text', 'pretext'],
+    }
+
+
+def get_stack_footer_attachment(cf_message):
+    timestamp = cf_message.get('Timestamp')
+    ts = (dateparser.parse(timestamp) if timestamp else datetime.now()).strftime('%s')
+    return {
+        'text': '',
+        'footer': 'CloudFormation',
+        'footer_icon': CF_ICON,
+        'ts': ts,
     }
 
 
@@ -200,4 +221,5 @@ def get_stack_url(stack_id):
             .format(region=region, query=urllib.urlencode(query)))
 
 # client = boto3.client('cloudformation')
-# print get_stack_params_attachment('stage-route-goggles')
+# print get_stack_params_attachment({'Timestamp': '2017-06-28T07:19:21.387Z',  'StackName': 'stage-route-goggles'})
+# print get_stack_params_attachment({'StackName': 'stage-goggles-a'})
