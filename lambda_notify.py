@@ -50,7 +50,7 @@ SNS_PROPERTIES_FOR_SLACK = [
     'StackName',
 ]
 
-# List of parameters that will be included in a Slack message
+# List of parameters, tags and outputs that will be included in a Slack message (if present)
 STACK_PARAMETERS_FOR_SLACK = [
     'SubdomainName',
     'aBlueOrGreen',
@@ -60,6 +60,8 @@ STACK_PARAMETERS_FOR_SLACK = [
     'configAppDomain',
     'configAwsBucketName',
     'configRTMPIngestAddress',
+    'microservice',
+    'myUri',
 ]
 
 client = None
@@ -148,27 +150,28 @@ def get_stack_summary_attachment(stack_name):
 
 
 def get_stack_params_attachment(stack_name):
-    params = client.describe_stacks(StackName=stack_name).get('Stacks', {})[0].get('Parameters', [])
+    stack_descr = client.describe_stacks(StackName=stack_name).get('Stacks', {})[0]
+
+    params = {e['OutputKey']: e['OutputValue'] for e in stack_descr.get('Outputs', [])}
+    params.update({e['Key']: e['Value'] for e in stack_descr.get('Tags', [])})
+    params.update({e['ParameterKey']: e['ParameterValue'] for e in stack_descr.get('Parameters', [])})
+
     if not params:
         return None
-
-    params = {e['ParameterKey']: e['ParameterValue'] for e in params}
 
     if params.get('environment'):
         if params['environment'].lower() == 'stage':
             params['environment'] += ' :stage:'
-        elif params['environment'].lower() == 'production':
+        elif params['environment'].lower().startswith('prod'):
             params['environment'] += ' :production:'
         else:
             params['environment'] += ' :construction:'
 
     if params.get('aBlueOrGreen'):
-        if params['aBlueOrGreen'].lower() == 'blue':
-            params['aBlueOrGreen'] += ' :large_blue_circle:'
-        elif params['aBlueOrGreen'].lower() == 'green':
-            params['aBlueOrGreen'] += ' :green_apple:'
-        else:
-            params['aBlueOrGreen'] += ' :alien:'
+        params['aBlueOrGreen'] += ' ' + {
+            'blue': ':large_blue_circle:',
+            'green': ':green_apple:',
+        }.get(params['aBlueOrGreen'].lower(),':alien:')
 
     title = 'Some parameters:'
 
@@ -195,3 +198,6 @@ def get_stack_url(stack_id):
 
     return ('https://{region}.console.aws.amazon.com/cloudformation/home?region={region}#/stacks?{query}'
             .format(region=region, query=urllib.urlencode(query)))
+
+# client = boto3.client('cloudformation')
+# print get_stack_params_attachment('stage-route-goggles')
