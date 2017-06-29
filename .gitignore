@@ -1,3 +1,4 @@
+.idea
 *.pyc
 slack.py
 cf-notify.zip

@@ -98,17 +98,18 @@ def get_stack_update_message(cf_message):
     ]
     resourse_status = cf_message['ResourceStatus']
     #if resourse_status in DESCRIBE_STACK_PARAMS:
-    if not resourse_status.upper().endswith('_IN_PROGRESS'):
+    if not resourse_status.upper().endswith('_CLEANUP_IN_PROGRESS'):
         attachments.append(get_stack_params_attachment(cf_message))
     if resourse_status in DESCRIBE_STACK_STATUS:
         attachments.append(get_stack_summary_attachment(cf_message))
     attachments.append(get_stack_footer_attachment(cf_message))
 
-    stack_url = get_stack_url(cf_message['StackId'])
-
     message = {
-        'text': 'Stack: {stack} has entered status: {status} <{link}|(view in web console)>'.format(
-                stack=cf_message['StackName'], status=cf_message['ResourceStatus'], link=stack_url),
+        'text': '',
+        # 'text': 'Stack: {stack} has entered status: {status} <{link}|(view in web console)>'.format(
+        #     stack=cf_message['StackName'],
+        #     status=cf_message['ResourceStatus'],
+        #     link=get_stack_url(cf_message['StackId'])),
         'attachments': attachments
     }
 
@@ -130,14 +131,12 @@ def get_channel(stack_name):
 
 
 def get_stack_update_attachment(cf_message):
-    title = 'Stack {stack} is now status {status}'.format(
-        stack=cf_message['StackName'],
-        status=cf_message['ResourceStatus'])
-
     return {
-        'title': title,
-        'fields': [{'title': k, 'value': v, 'short': True}
-                   for k, v in cf_message.iteritems() if k.lower() in map(str.lower, SNS_PROPERTIES_FOR_SLACK)],
+        'text': '*Stack {stack} is now status {status}* <{link}|(view in web console)>'.format(
+            stack=cf_message['StackName'],
+            status=cf_message['ResourceStatus'],
+            link=get_stack_url(cf_message['StackId'])),
+        'mrkdwn_in': ['text', 'pretext'],
         'color': STATUS_COLORS.get(cf_message['ResourceStatus'], '#000000'),
     }
 
@@ -220,6 +219,6 @@ def get_stack_url(stack_id):
     return ('https://{region}.console.aws.amazon.com/cloudformation/home?region={region}#/stacks?{query}'
             .format(region=region, query=urllib.urlencode(query)))
 
-# client = boto3.client('cloudformation')
-# print get_stack_params_attachment({'Timestamp': '2017-06-28T07:19:21.387Z',  'StackName': 'stage-route-goggles'})
-# print get_stack_params_attachment({'StackName': 'stage-goggles-a'})
+#client = boto3.client('cloudformation')
+#print get_stack_params_attachment({'Timestamp': '2017-06-28T07:19:21.387Z',  'StackName': 'stage-route-goggles'})
+#print get_stack_params_attachment({'StackName': 'stage-goggles-a'})
