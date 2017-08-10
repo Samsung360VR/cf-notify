@@ -2,12 +2,12 @@ import json
 import shlex
 import urllib
 import urllib2
-import slack
-import boto3
 import re
 from itertools import groupby
-from dateutil import parser as dateparser
 from datetime import datetime
+from dateutil import parser as dateparser
+import slack
+import boto3
 
 # Mapping CloudFormation status codes to colors for Slack message attachments
 # Status codes from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
@@ -60,10 +60,10 @@ STACK_PARAMETERS_FOR_SLACK = [
     'SubdomainName',
     'version',
     'configAppDomain',
-    'configAwsBucketName',
-    'configRTMPIngestAddress',
+#    'configAwsBucketName',
+#    'configRTMPIngestAddress',
     'microservice',
-    'myUri',
+#    'myUri',
     'httpUri',
     'purpose',
     'mode',
@@ -183,8 +183,8 @@ def get_stack_params_attachment(cf_message):
         }.get(params['aBlueOrGreen'].lower(), ':alien:')
 
     return {
-        'pretext': '_Momentous:_',
-        'text': '\n'.join(
+        #'pretext': '_Momentous:_',
+        'text': ' '.join(
             ['*{key}*: {value}'.format(key=k, value=v) for k, v in params.iteritems()
              if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)]),
         'mrkdwn_in': ['text', 'pretext'],
@@ -220,5 +220,5 @@ def get_stack_url(stack_id):
             .format(region=region, query=urllib.urlencode(query)))
 
 #client = boto3.client('cloudformation')
-#print get_stack_params_attachment({'Timestamp': '2017-06-28T07:19:21.387Z',  'StackName': 'stage-route-goggles'})
-#print get_stack_params_attachment({'StackName': 'stage-goggles-a'})
+#print get_stack_params_attachment({'Timestamp': '2017-06-28T07:19:21.387Z', 'StackName': 'stage-route-goggles'})
+#print get_stack_params_attachment({'StackName': 'stage-webapi-f'})
