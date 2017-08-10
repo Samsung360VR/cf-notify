@@ -29,6 +29,11 @@ To setup CF Notify, we need to do the following.
 #### Slack incoming webhook
 You can create an incoming webhook [here](https://my.slack.com/services/new/incoming-webhook/).
 
+For existing webhooks, copy the config info from the Incoming Webhooks Config page and setup `slack.py` with the following variables:
+- WEBHOOK (string) - Web hook URL, e.g. "https://hooks.slack.com/services/.../.../..."
+- CHANNEL (string) - channel, e.g. "#ops"
+- CUSTOM_CHANNELS (dict) - a dictionary, key is the stack name and value is the channel for the stack, can be empty
+
 
 ### Deploy Lambda
 
