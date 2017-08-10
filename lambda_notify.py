@@ -182,12 +182,19 @@ def get_stack_params_attachment(cf_message):
             'green': ':green_apple:',
         }.get(params['aBlueOrGreen'].lower(), ':alien:')
 
+    values = '\n'.join(['{value}'.format(value=v) for k, v in params.iteritems()
+        if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)])
+    fields = '\n'.join(['*{key}*'.format(key=k) for k, v in params.iteritems()
+        if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)])
+
     return {
         #'pretext': '_Momentous:_',
-        'text': ' '.join(
-            ['*{key}*: {value}'.format(key=k, value=v) for k, v in params.iteritems()
-             if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)]),
-        'mrkdwn_in': ['text', 'pretext'],
+        #'text': ' '.join(
+        #    ['*{key}*: {value}'.format(key=k, value=v) for k, v in params.iteritems()
+        #     if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)]),
+        'fields': [{"title": "Parameter", "value": fields, "short": True},
+                   {"title": "Value", "value": values, "short": True}],
+        'mrkdwn_in': ['text', 'fields'],
     }
 
 
