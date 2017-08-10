@@ -102,7 +102,7 @@ def get_stack_update_message(cf_message):
         attachments.append(get_stack_params_attachment(cf_message))
     if resourse_status in DESCRIBE_STACK_STATUS:
         attachments.append(get_stack_summary_attachment(cf_message))
-    attachments.append(get_stack_footer_attachment(cf_message))
+    #attachments.append(get_stack_footer_attachment(cf_message))
 
     message = {
         'text': '',
