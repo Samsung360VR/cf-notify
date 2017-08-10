@@ -59,7 +59,7 @@ STACK_PARAMETERS_FOR_SLACK = [
     'environment',
     'SubdomainName',
     'version',
-    'configAppDomain',
+#    'configAppDomain',
 #    'configAwsBucketName',
 #    'configRTMPIngestAddress',
     'microservice',
@@ -192,8 +192,8 @@ def get_stack_params_attachment(cf_message):
         #'text': ' '.join(
         #    ['*{key}*: {value}'.format(key=k, value=v) for k, v in params.iteritems()
         #     if k.lower() in map(str.lower, STACK_PARAMETERS_FOR_SLACK)]),
-        'fields': [{"title": "Parameter", "value": fields, "short": True},
-                   {"title": "Value", "value": values, "short": True}],
+        'fields': [{"title": "", "value": fields, "short": True},
+                   {"title": "", "value": values, "short": True}],
         'mrkdwn_in': ['text', 'fields'],
     }
 
