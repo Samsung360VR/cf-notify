@@ -83,13 +83,40 @@ def lambda_handler(event, context):
     cf_message = dict(token.split('=', 1) for token in shlex.split(sns_message))
 
     # ignore messages that do not pertain to the Stack as a whole
-    if not cf_message['ResourceType'] == 'AWS::CloudFormation::Stack':
+    if (not cf_message['ResourceType'] == 'AWS::CloudFormation::Stack'
+        and not cf_message['ResourceType'] == 'ServerSettings'):
         return
 
-    message = get_stack_update_message(cf_message)
+    if cf_message['ResourceType'] == 'ServerSettings':
+        message = get_server_settings(cf_message)
+    else:
+        message = get_stack_update_message(cf_message)
     data = json.dumps(message)
     req = urllib2.Request(slack.WEBHOOK, data, {'Content-Type': 'application/json'})
     urllib2.urlopen(req)
+
+
+def get_server_settings(cf_message):
+
+    fields = '\n'.join(["STACK", "SETTING", "VALUE"])
+    values = '\n'.join(map(lambda x: urllib.unquote(cf_message[x]), ["StackName", "SETTING", "VALUE"]))
+    attachments = [
+        {
+            'text': 'Server settings update',
+            'color': '#0000ff'
+        },
+        {
+            'fields': [{"title": "", "value": fields, "short": True},
+                       {"title": "", "value": values, "short": True}],
+            'mrkdwn_in': ['text', 'fields']
+        }
+    ]
+    message = {
+        'text': '',
+        'attachments': attachments,
+        'channel': cf_message.get('channel', '#server')
+    }
+    return message
 
 
 def get_stack_update_message(cf_message):
